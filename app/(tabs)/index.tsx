@@ -1,70 +1,91 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { StyleSheet, FlatList, TouchableWithoutFeedback } from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { useEffect, useState } from "react";
+import { EventsAPI } from "@/networkHandler/apis/events";
+import { ThemedTile } from "@/components/ThemedTile";
+import { useNavigation } from "expo-router";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function EventsScreen() {
+  const [events, setEvents] = useState();
+  const navigation = useNavigation();
 
-export default function HomeScreen() {
+  useEffect(() => {
+    onInit();
+  }, []);
+  const onInit = async () => {
+    const data = await EventsAPI.getEventsAvailableForUser();
+    setEvents(data?.events);
+  };
+  const renderEvent = (item) => {
+    const onPress = () => {
+      // navigation.setParams(item)
+      navigation.navigate("screens/eventDetails", item?.item);
+    };
+    return (
+      <TouchableWithoutFeedback onPress={onPress}>
+        <ThemedTile lightColor="#fff" style={styles.tileContainer}>
+          <ThemedText style={{flex: 1}}>{item?.item?.title}</ThemedText>
+          {item?.item?.currentUserStatus == "APPROVED" ? (
+            <ThemedText style={styles.confirmed}>CONFIRMED</ThemedText>
+          ) : null}
+        </ThemedTile>
+      </TouchableWithoutFeedback>
+    );
+  };
+
+  const renderHeader = () => {
+    return [
+      <ThemedView
+        key={"header"}
+        lightColor="#A1CEDC"
+        darkColor="#1D3D47"
+        style={styles.titleContainer}
+      >
+        <ThemedText type="title">Let's Hang!</ThemedText>
+      </ThemedView>,
+      <ThemedView key={"header-subtitle"} style={{ marginBottom: 10 }}>
+        <ThemedText type="subtitle" style={styles.subtitle}>
+          Events for you
+        </ThemedText>
+      </ThemedView>,
+    ];
+  };
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <FlatList
+      ListHeaderComponent={renderHeader}
+      data={events}
+      renderItem={renderEvent}
+      keyExtractor={(item) => item.id}
+      stickyHeaderIndices={[0]}
+    />
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
+    paddingLeft: 30,
+    paddingTop: 100,
+    paddingBottom: 30,
+    flex: 1,
   },
-  stepContainer: {
+  subtitle: {
     gap: 8,
-    marginBottom: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  tileContainer: {
+    marginHorizontal: 10,
+    flexDirection: "row"
   },
+  confirmed: {
+    color: "#1EC34E"
+  }
 });
